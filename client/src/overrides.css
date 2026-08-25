@@ -17,7 +17,7 @@
 .auth-card { width: min(390px, calc(100% - 40px)); padding: 43px; border: 1px solid var(--auth-line); border-radius: 10px; background: var(--auth-paper); box-shadow: 0 24px 80px rgba(50, 48, 38, .08); }
 .auth-brand { margin: 0 0 53px; color: var(--auth-ink); }.auth-kicker { color: var(--auth-accent); font-size: 10px; font-weight: 700; letter-spacing: 1.3px; }.auth-card h1 { margin: 15px 0 8px; color: var(--auth-ink); font: 600 42px/1 var(--display); letter-spacing: -.8px; }.auth-card > p { margin: 0 0 27px; font-size: 13px; }.auth-form { display: grid; gap: 10px; }.auth-form input { width: 100%; padding: 13px 14px; border: 1px solid var(--auth-line); border-radius: 5px; outline: 0; background: var(--auth-bg); color: var(--auth-ink); font-size: 13px; }.auth-form input:focus { border-color: var(--auth-accent); }.auth-submit { margin-top: 5px; padding: 13px; border: 0; border-radius: 5px; background: var(--auth-accent); color: white; cursor: pointer; font: 700 12px var(--sans); }.auth-submit:disabled { opacity: .65; cursor: wait; }.auth-switch { width: 100%; margin-top: 20px; padding: 0; border: 0; background: transparent; color: var(--auth-muted); cursor: pointer; font-size: 11px; }.auth-switch:hover { color: var(--auth-accent); }.auth-error { padding: 9px; border-radius: 4px; background: var(--auth-accent-soft, #fae7dc); color: #bc5c40; font-size: 11px; }
 @media (max-width: 650px) {
-	.sidebar { position: fixed; inset: 0 auto 0 0; z-index: 10; width: min(292px, 84vw); height: 100vh; min-height: 100vh; transform: translateX(-105%); transition: transform .28s ease; box-shadow: 12px 0 35px rgba(0, 0, 0, .14); }
+	.sidebar { position: fixed; inset: 0 auto 0 0; z-index: 10; width: min(292px, 84vw); height: 100vh; min-height: 100vh; transform: translateX(-105%); transition: transform .28s ease; box-shadow: 12px 0 35px rgba(0, 0, 0, .14); overflow: hidden; }
 	.app-shell:has(.drawer-backdrop) .sidebar { transform: translateX(0); }
 	.app-shell:has(.drawer-backdrop) .drawer-backdrop { display: block; position: fixed; inset: 0; z-index: 9; border: 0; background: rgba(20, 22, 21, .42); }
 	.mobile-menu { display: block; }
@@ -27,4 +27,8 @@
 	.editor { width: 100%; padding: 42px 22px 40px; }
 	.sidebar-footer { display: flex; margin-top: auto; }
 	.auth-card { padding: 31px 25px; }
+	.file-tree { display: grid; align-content: start; overflow-x: hidden; overflow-y: auto; flex: 1; min-height: 0; padding: 0 2px 14px; overscroll-behavior: contain; }
+	.tree-item { width: 100%; min-width: 0; min-height: 46px; padding: 11px 10px; padding-left: calc(10px + var(--depth) * 18px); touch-action: pan-y; }
+	.tree-item[style] { padding-left: calc(10px + var(--depth) * 18px); }
+	.context-menu { max-width: calc(100vw - 20px); }
 }
