@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import './overrides.css'
 
 const starterItems = [
   { id: 'folder-project', type: 'folder', name: 'My projects', parentId: null },
@@ -14,6 +15,7 @@ function App() {
   const [modal, setModal] = useState(null)
   const [theme, setTheme] = useState(() => localStorage.getItem('little-list-theme') || 'light')
   const [draggedId, setDraggedId] = useState(null)
+  const [contextMenu, setContextMenu] = useState(null)
 
   useEffect(() => localStorage.setItem('little-list-items', JSON.stringify(items)), [items])
   useEffect(() => { localStorage.setItem('little-list-theme', theme) }, [theme])
@@ -64,9 +66,27 @@ function App() {
     setDraggedId(null)
   }
 
+  function moveToRoot() {
+    if (!draggedId) return
+    setItems((current) => current.map((item) => item.id === draggedId ? { ...item, parentId: null } : item))
+    setDraggedId(null)
+  }
+
+  function deleteItem(itemId) {
+    const idsToDelete = new Set([itemId])
+    let changed = true
+    while (changed) {
+      changed = false
+      items.forEach((item) => { if (idsToDelete.has(item.parentId) && !idsToDelete.has(item.id)) { idsToDelete.add(item.id); changed = true } })
+    }
+    setItems((current) => current.filter((item) => !idsToDelete.has(item.id)))
+    if (idsToDelete.has(selectedId)) setSelectedId(null)
+    setContextMenu(null)
+  }
+
   function renderTree(parentId = null, depth = 0) {
     return childrenOf(parentId).map((item) => <div key={item.id}>
-      <button className={`tree-item ${selectedId === item.id ? 'selected' : ''}`} style={{ '--depth': depth }} draggable onDragStart={() => setDraggedId(item.id)} onDragEnd={() => setDraggedId(null)} onDragOver={(event) => item.type === 'folder' && event.preventDefault()} onDrop={() => item.type === 'folder' && dropOnFolder(item.id)} onClick={() => item.type === 'folder' ? toggleFolder(item.id) : setSelectedId(item.id)} type="button">
+      <button className={`tree-item ${selectedId === item.id ? 'selected' : ''}`} style={{ '--depth': depth }} draggable onDragStart={() => setDraggedId(item.id)} onDragEnd={() => setDraggedId(null)} onDragOver={(event) => item.type === 'folder' && event.preventDefault()} onDrop={(event) => { if (item.type === 'folder') { event.stopPropagation(); dropOnFolder(item.id) } }} onContextMenu={(event) => { event.preventDefault(); setContextMenu({ id: item.id, x: event.clientX, y: event.clientY }) }} onClick={() => item.type === 'folder' ? toggleFolder(item.id) : setSelectedId(item.id)} type="button">
         <span className={`tree-icon ${item.type}`}>{item.type === 'folder' ? (expanded.has(item.id) ? '▾' : '▸') : '□'}</span><span className="tree-name">{item.name}</span>{item.type === 'folder' && <span className="tree-count">{childrenOf(item.id).length}</span>}
       </button>
       {item.type === 'folder' && expanded.has(item.id) && renderTree(item.id, depth + 1)}
@@ -81,7 +101,7 @@ function App() {
       <div className="workspace-head"><span>MY SPACE</span><button type="button" aria-label="More workspace options">•••</button></div>
       <div className="create-actions"><button type="button" onClick={() => setModal('folder')}><span>＋</span> New folder</button><button type="button" onClick={() => setModal('file')}><span>＋</span> New file</button></div>
       <div className="tree-label">FILES <span>{filesCount}</span></div>
-      <nav className="file-tree" aria-label="Files and folders">{rootItems.length ? renderTree() : <p className="tree-empty">Your space is empty.</p>}</nav>
+      <nav className="file-tree" aria-label="Files and folders">{rootItems.length ? renderTree() : <p className="tree-empty">Your space is empty.</p>}{draggedId && items.find((item) => item.id === draggedId)?.parentId !== null && <button className="root-drop" type="button" onDragOver={(event) => event.preventDefault()} onDrop={moveToRoot}>↥ Move to My space</button>}</nav>
       <div className="sidebar-footer"><div className="storage-line"><span className="status-dot" /> Saved locally</div><button className="theme-toggle" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} aria-label="Change theme"><span>☀</span><span className={`toggle-track ${theme === 'dark' ? 'is-dark' : ''}`}><i /></span><span>☾</span></button></div>
     </aside>
     <main className="main-content">
@@ -95,6 +115,7 @@ function App() {
       </article> : <div className="welcome"><span className="welcome-icon">✦</span><h1>A small space<br />for big ideas.</h1><p>Choose a file from the sidebar<br />or create something new.</p><div className="welcome-actions"><button type="button" onClick={() => setModal('folder')}>＋ New folder</button><button type="button" onClick={() => setModal('file')}>＋ New file</button></div></div>}
     </main>
     {modal && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}><form className="modal" onSubmit={createItem}><span className="modal-icon">{modal === 'folder' ? '▰' : '□'}</span><h2>New {modal}</h2><p>Give your {modal} a clear name.</p><input name="name" autoFocus placeholder={modal === 'folder' ? 'e.g. Personal' : 'e.g. Project notes'} /><div className="modal-actions"><button type="button" onClick={() => setModal(null)}>Cancel</button><button className="primary" type="submit">Create {modal}</button></div></form></div>}
+    {contextMenu && <div className="context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}><button type="button" onClick={() => deleteItem(contextMenu.id)}>Delete {items.find((item) => item.id === contextMenu.id)?.type}</button></div>}
   </div>
 }
 
