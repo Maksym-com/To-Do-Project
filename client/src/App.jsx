@@ -139,17 +139,24 @@ function App() {
 
   function startPress(item, event) {
     if (event.pointerType === 'mouse') return
-    pressStart.current = { x: event.clientX, y: event.clientY }
+    if (pressTimer.current) return
+    const touch = event.touches?.[0]
+    const x = touch?.clientX ?? event.clientX
+    const y = touch?.clientY ?? event.clientY
+    pressStart.current = { x, y }
     longPressTriggered.current = false
     pressTimer.current = setTimeout(() => {
       longPressTriggered.current = true
-      setContextMenu({ id: item.id, x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 180) })
+      setContextMenu({ id: item.id, x: Math.min(x, window.innerWidth - 190), y: Math.min(y, window.innerHeight - 180) })
     }, 550)
   }
 
   function movePress(event) {
     if (!pressStart.current) return
-    const moved = Math.hypot(event.clientX - pressStart.current.x, event.clientY - pressStart.current.y)
+    const touch = event.touches?.[0]
+    const x = touch?.clientX ?? event.clientX
+    const y = touch?.clientY ?? event.clientY
+    const moved = Math.hypot(x - pressStart.current.x, y - pressStart.current.y)
     if (moved > 10) clearPress()
   }
 
@@ -161,7 +168,7 @@ function App() {
 
   function renderTree(parentId = null, depth = 0) {
     return childrenOf(parentId).map((item) => <div key={item.id}>
-      <button className={`tree-item ${selectedId === item.id ? 'selected' : ''}`} style={{ '--depth': depth }} draggable onPointerDown={(event) => startPress(item, event)} onPointerMove={movePress} onPointerUp={clearPress} onPointerCancel={clearPress} onDragStart={() => { clearPress(); setDraggedId(item.id) }} onDragEnd={() => setDraggedId(null)} onDragOver={(event) => item.type === 'folder' && event.preventDefault()} onDrop={(event) => { if (item.type === 'folder') { event.stopPropagation(); dropOnFolder(item.id) } }} onContextMenu={(event) => { event.preventDefault(); setContextMenu({ id: item.id, x: event.clientX, y: event.clientY }) }} onClick={(event) => { if (longPressTriggered.current) { longPressTriggered.current = false; event.preventDefault(); return } if (item.type === 'folder') toggleFolder(item.id); else { setSelectedId(item.id); setMobileSidebarOpen(false) } }} type="button">
+      <button className={`tree-item ${selectedId === item.id ? 'selected' : ''}`} style={{ '--depth': depth }} draggable onPointerDown={(event) => startPress(item, event)} onPointerMove={movePress} onPointerUp={clearPress} onPointerCancel={clearPress} onTouchStart={(event) => startPress(item, event)} onTouchMove={movePress} onTouchEnd={clearPress} onTouchCancel={clearPress} onDragStart={() => { clearPress(); setDraggedId(item.id) }} onDragEnd={() => setDraggedId(null)} onDragOver={(event) => item.type === 'folder' && event.preventDefault()} onDrop={(event) => { if (item.type === 'folder') { event.stopPropagation(); dropOnFolder(item.id) } }} onContextMenu={(event) => { event.preventDefault(); setContextMenu({ id: item.id, x: event.clientX, y: event.clientY }) }} onClick={(event) => { if (longPressTriggered.current) { longPressTriggered.current = false; event.preventDefault(); event.stopPropagation(); return } if (item.type === 'folder') toggleFolder(item.id); else { setSelectedId(item.id); setMobileSidebarOpen(false) } }} type="button">
         <span className={`tree-icon ${item.type}`}>{item.type === 'folder' ? (expanded.has(item.id) ? '▾' : '▸') : '□'}</span><span className="tree-name">{item.name}</span>{item.type === 'folder' && <span className="tree-count">{childrenOf(item.id).length}</span>}
       </button>
       {item.type === 'folder' && expanded.has(item.id) && renderTree(item.id, depth + 1)}
