@@ -1,0 +1,18 @@
+databases:
+  - name: little-list-db
+    plan: free
+
+services:
+  - type: web
+    name: little-list-api
+    runtime: python
+    rootDir: server
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: little-list-db
+          property: connectionString
+      - key: FRONTEND_URL
+        sync: false
