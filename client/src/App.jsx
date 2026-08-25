@@ -56,7 +56,7 @@ function App() {
       const saved = localStorage.getItem(`little-list-items-${authenticatedUser.id}`)
       setItems(saved ? JSON.parse(saved) : starterItems)
     } catch (error) {
-      setAuthError(error.message.includes('409') ? 'This email is already registered.' : authMode === 'login' ? 'Invalid email or password.' : 'Use a name, valid email and password of at least 6 characters.')
+      setAuthError(error.message.includes('already registered') ? 'This email is already registered.' : error.message.includes('Cannot connect') ? `${error.message}. Set VITE_API_URL to your Render URL.` : error.message)
     } finally { setAuthBusy(false) }
   }
 
