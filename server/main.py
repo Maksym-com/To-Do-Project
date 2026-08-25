@@ -9,7 +9,11 @@ from models.user import User
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-this-in-production")
 allowed_origins = [origin.strip() for origin in os.environ.get("FRONTEND_URL", "").split(",") if origin.strip()]
-allowed_origins.extend(["http://localhost:5173", "http://127.0.0.1:5173"])
+allowed_origins.extend([
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://to-do-project-chi-swart.vercel.app",
+])
 CORS(app, origins=allowed_origins)
 
 init_db(app)
