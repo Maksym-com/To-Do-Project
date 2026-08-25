@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap');
 
-:root { --sans: 'DM Sans', sans-serif; --display: 'Newsreader', Georgia, serif; font-family: var(--sans); color: #777970; background: #f8f7f3; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+:root { font-family: 'DM Sans', sans-serif; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
-button, input { font-family: inherit; }
-button:focus-visible, input:focus-visible { outline: 2px solid #e47b51; outline-offset: 2px; }
+button, input, textarea { font-family: inherit; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #df754d; outline-offset: 2px; }

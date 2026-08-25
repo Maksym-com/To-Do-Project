@@ -18,3 +18,4 @@ client/.env.local
 .idea/
 .DS_Store
 Thumbs.db
+node_modules

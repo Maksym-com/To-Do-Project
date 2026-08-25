@@ -2,19 +2,21 @@
 
 Simple Notion-style to-do app: Flask + PostgreSQL API on Render, React/Vite client on Vercel.
 
-## Deploy API and database to Render
+## Deploy API to Render with Supabase
 
 1. Push this repository to GitHub.
 2. In Render, choose **New > Blueprint** and select the repository.
-3. Render will read `render.yaml`, create the PostgreSQL database, and deploy `server` with Gunicorn.
-4. After deployment, open the web service **Environment** settings and set `FRONTEND_URL` to the final Vercel URL, for example `https://little-list.vercel.app`.
+3. Render will read `render.yaml` and deploy `server` with Gunicorn.
+4. In the Render web service **Environment Variables**, add:
+   - `DATABASE_URL`: the Supabase **Transaction pooler** connection string from **Connect > ORMs > SQLAlchemy**. Keep the full value, including the password and `?sslmode=require`.
+   - `FRONTEND_URL`: the final Vercel URL, for example `https://little-list.vercel.app`.
 5. Check the API at `https://YOUR-RENDER-SERVICE.onrender.com/`.
 
 ## Deploy client to Vercel
 
 1. In Vercel, import the same repository.
 2. Set **Root Directory** to `client`.
-3. Add the environment variable `VITE_API_URL` with the Render service URL, without a trailing slash.
+3. Add the environment variable `VITE_API_URL` with the Render service URL, without a trailing slash, for example `https://little-list-api.onrender.com`.
 4. Deploy. The included `client/vercel.json` keeps client-side routes working.
 
 ## Local development

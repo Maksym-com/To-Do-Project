@@ -1,97 +1,101 @@
-import { useEffect, useMemo, useState } from 'react'
-import { createTask, deleteTask, getTasks, updateTask } from './services/api'
+import { useEffect, useState } from 'react'
 import './App.css'
 
-const starterTasks = [
-  { id: 1, title: 'Map out the week', detail: 'Choose three outcomes that would make Friday feel good.', done: false, tag: 'Planning' },
-  { id: 2, title: 'Reply to the design notes', detail: 'Close the loop with a clear next step.', done: false, tag: 'Work' },
-  { id: 3, title: 'Book a quiet hour', detail: 'Make some room for focused, uninterrupted work.', done: true, tag: 'Personal' },
+const starterItems = [
+  { id: 'folder-project', type: 'folder', name: 'My projects', parentId: null },
+  { id: 'file-welcome', type: 'file', name: 'Welcome', parentId: null, content: 'A quiet place for your ideas and plans.', todos: [] },
+  { id: 'file-week', type: 'file', name: 'This week', parentId: 'folder-project', content: 'Focus on what matters most.', todos: [{ id: 'todo-1', text: 'Choose one important thing', done: false }, { id: 'todo-2', text: 'Make a little progress', done: true }] },
 ]
 
-const filters = ['All', 'Today', 'Upcoming', 'Done']
-
 function App() {
-  const [tasks, setTasks] = useState(() => {
-    const saved = localStorage.getItem('little-list-tasks')
-    return saved ? JSON.parse(saved) : starterTasks
-  })
-  const [newTask, setNewTask] = useState('')
-  const [activeFilter, setActiveFilter] = useState('All')
-  const [focusMode, setFocusMode] = useState(false)
+  const [items, setItems] = useState(() => JSON.parse(localStorage.getItem('little-list-items') || 'null') || starterItems)
+  const [selectedId, setSelectedId] = useState('file-welcome')
+  const [expanded, setExpanded] = useState(() => new Set(['folder-project']))
+  const [modal, setModal] = useState(null)
+  const [theme, setTheme] = useState(() => localStorage.getItem('little-list-theme') || 'light')
+  const [draggedId, setDraggedId] = useState(null)
 
-  useEffect(() => {
-    getTasks()
-      .then((remoteTasks) => setTasks(remoteTasks))
-      .catch(() => {})
-  }, [])
+  useEffect(() => localStorage.setItem('little-list-items', JSON.stringify(items)), [items])
+  useEffect(() => { localStorage.setItem('little-list-theme', theme) }, [theme])
 
-  useEffect(() => {
-    localStorage.setItem('little-list-tasks', JSON.stringify(tasks))
-  }, [tasks])
+  const selectedFile = items.find((item) => item.id === selectedId && item.type === 'file')
+  const rootItems = items.filter((item) => item.parentId === null)
+  const filesCount = items.filter((item) => item.type === 'file').length
 
-  const visibleTasks = useMemo(() => tasks.filter((task) => {
-    if (activeFilter === 'Done') return task.done
-    if (activeFilter === 'Today') return !task.done && task.tag !== 'Upcoming'
-    if (activeFilter === 'Upcoming') return !task.done && task.tag === 'Upcoming'
-    return !focusMode || !task.done
-  }), [activeFilter, focusMode, tasks])
+  function childrenOf(parentId) { return items.filter((item) => item.parentId === parentId) }
 
-  const openCount = tasks.filter((task) => !task.done).length
-  const completedCount = tasks.length - openCount
-
-  function addTask(event) {
+  function createItem(event) {
     event.preventDefault()
-    const title = newTask.trim()
-    if (!title) return
-    const task = { title, detail: 'Added just now', done: false, tag: 'Today' }
-    setTasks((current) => [{ id: Date.now(), ...task }, ...current])
-    createTask(task).then((savedTask) => setTasks((current) => current.map((item) => item.title === title && item.id > 1000000000000 ? savedTask : item))).catch(() => {})
-    setNewTask('')
+    const name = new FormData(event.currentTarget).get('name').trim()
+    if (!name) return
+    const id = `${modal}-${items.length + 1}`
+    const item = modal === 'folder' ? { id, type: 'folder', name, parentId: null } : { id, type: 'file', name, parentId: null, content: '', todos: [] }
+    setItems((current) => [...current, item])
+    if (modal === 'file') setSelectedId(id)
+    setModal(null)
   }
 
-  function toggleTask(id) {
-    setTasks((current) => current.map((task) => task.id === id ? { ...task, done: !task.done } : task))
-    const task = tasks.find((item) => item.id === id)
-    if (task) updateTask(id, { done: !task.done }).catch(() => {})
+  function updateSelected(changes) { setItems((current) => current.map((item) => item.id === selectedId ? { ...item, ...changes } : item)) }
+  function renameSelected(event) { updateSelected({ name: event.target.value }) }
+
+  function addTodo(event) {
+    event.preventDefault()
+    const text = new FormData(event.currentTarget).get('todo').trim()
+    if (!text) return
+    updateSelected({ todos: [...(selectedFile.todos || []), { id: `${selectedId}-todo-${selectedFile.todos.length + 1}`, text, done: false }] })
+    event.currentTarget.reset()
   }
 
-  function removeTask(id) {
-    setTasks((current) => current.filter((task) => task.id !== id))
-    if (id < 1000000000000) deleteTask(id).catch(() => {})
+  function toggleTodo(todoId) { updateSelected({ todos: selectedFile.todos.map((todo) => todo.id === todoId ? { ...todo, done: !todo.done } : todo) }) }
+  function removeTodo(todoId) { updateSelected({ todos: selectedFile.todos.filter((todo) => todo.id !== todoId) }) }
+  function toggleFolder(folderId) { setExpanded((current) => { const next = new Set(current); next.has(folderId) ? next.delete(folderId) : next.add(folderId); return next }) }
+
+  function canMove(itemId, parentId) {
+    if (itemId === parentId) return false
+    let current = items.find((item) => item.id === parentId)
+    while (current) { if (current.id === itemId) return false; current = items.find((item) => item.id === current.parentId) }
+    return true
   }
 
-  return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand"><span className="brand-mark">◎</span> little list</div>
-        <div className="workspace-label">MY WORKSPACE</div>
-        <nav className="side-nav" aria-label="Workspace">
-          <button className="nav-item active" type="button"><span>□</span> Inbox <b>{openCount}</b></button>
-          <button className="nav-item" type="button"><span>▣</span> Today</button>
-          <button className="nav-item" type="button"><span>◷</span> Upcoming</button>
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="mini-progress"><span style={{ width: `${tasks.length ? (completedCount / tasks.length) * 100 : 0}%` }} /></div>
-          <p><strong>{completedCount}</strong> of {tasks.length} complete</p>
-          <div className="profile"><span className="avatar">M</span><span>maksim</span><span className="dots">•••</span></div>
-        </div>
-      </aside>
+  function dropOnFolder(folderId) {
+    if (!draggedId || !canMove(draggedId, folderId)) return
+    setItems((current) => current.map((item) => item.id === draggedId ? { ...item, parentId: folderId } : item))
+    setExpanded((current) => new Set(current).add(folderId))
+    setDraggedId(null)
+  }
 
-      <main className="main-content">
-        <header className="topbar"><span className="crumb">Workspace / <strong>Inbox</strong></span><button className="icon-button" type="button" aria-label="More options">•••</button></header>
-        <section className="content-wrap">
-          <div className="eyebrow">TUESDAY, AUGUST 25</div>
-          <div className="title-row"><div><h1>Good morning, Maksim.</h1><p className="subtitle">A clear space for the things that matter today.</p></div><button className={`focus-button ${focusMode ? 'selected' : ''}`} type="button" onClick={() => setFocusMode(!focusMode)}><span>◉</span> {focusMode ? 'Focus on' : 'Focus mode'}</button></div>
+  function renderTree(parentId = null, depth = 0) {
+    return childrenOf(parentId).map((item) => <div key={item.id}>
+      <button className={`tree-item ${selectedId === item.id ? 'selected' : ''}`} style={{ '--depth': depth }} draggable onDragStart={() => setDraggedId(item.id)} onDragEnd={() => setDraggedId(null)} onDragOver={(event) => item.type === 'folder' && event.preventDefault()} onDrop={() => item.type === 'folder' && dropOnFolder(item.id)} onClick={() => item.type === 'folder' ? toggleFolder(item.id) : setSelectedId(item.id)} type="button">
+        <span className={`tree-icon ${item.type}`}>{item.type === 'folder' ? (expanded.has(item.id) ? '▾' : '▸') : '□'}</span><span className="tree-name">{item.name}</span>{item.type === 'folder' && <span className="tree-count">{childrenOf(item.id).length}</span>}
+      </button>
+      {item.type === 'folder' && expanded.has(item.id) && renderTree(item.id, depth + 1)}
+    </div>)
+  }
 
-          <form className="add-task" onSubmit={addTask}><span className="plus">＋</span><input value={newTask} onChange={(event) => setNewTask(event.target.value)} placeholder="Add a task to your list..." aria-label="New task" /><button type="submit">Add task <span>↵</span></button></form>
+  const completedTodos = selectedFile?.todos?.filter((todo) => todo.done).length || 0
 
-          <div className="list-heading"><div><h2>My tasks</h2><span className="task-count">{openCount} open</span></div><div className="filters" role="tablist" aria-label="Task filters">{filters.map((filter) => <button key={filter} className={activeFilter === filter ? 'filter active' : 'filter'} type="button" onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div></div>
-          <div className="task-list">{visibleTasks.length ? visibleTasks.map((task, index) => <article className={`task-row ${task.done ? 'done' : ''}`} key={task.id} style={{ '--delay': `${index * 60}ms` }}><button className="check" type="button" aria-label={`Mark ${task.title} ${task.done ? 'open' : 'done'}`} onClick={() => toggleTask(task.id)}>{task.done ? '✓' : ''}</button><div className="task-copy"><h3>{task.title}</h3><p>{task.detail}</p></div><span className={`tag tag-${task.tag.toLowerCase()}`}>{task.tag}</span><button className="delete-button" type="button" aria-label={`Delete ${task.title}`} onClick={() => removeTask(task.id)}>×</button></article>) : <div className="empty-state"><span>✦</span><h3>Nothing here yet</h3><p>Enjoy the breathing room, or add something new above.</p></div>}</div>
-          <footer className="list-footer"><span><span className="footer-dot" /> Changes save automatically</span><span>Press <kbd>⌘</kbd> <kbd>K</kbd> to search</span></footer>
-        </section>
-      </main>
-    </div>
-  )
+  return <div className={`app-shell ${theme}`}>
+    <aside className="sidebar">
+      <div className="brand"><span className="brand-mark">✦</span><span>little list</span></div>
+      <div className="workspace-head"><span>MY SPACE</span><button type="button" aria-label="More workspace options">•••</button></div>
+      <div className="create-actions"><button type="button" onClick={() => setModal('folder')}><span>＋</span> New folder</button><button type="button" onClick={() => setModal('file')}><span>＋</span> New file</button></div>
+      <div className="tree-label">FILES <span>{filesCount}</span></div>
+      <nav className="file-tree" aria-label="Files and folders">{rootItems.length ? renderTree() : <p className="tree-empty">Your space is empty.</p>}</nav>
+      <div className="sidebar-footer"><div className="storage-line"><span className="status-dot" /> Saved locally</div><button className="theme-toggle" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} aria-label="Change theme"><span>☀</span><span className={`toggle-track ${theme === 'dark' ? 'is-dark' : ''}`}><i /></span><span>☾</span></button></div>
+    </aside>
+    <main className="main-content">
+      <header className="topbar"><span className="breadcrumb">My space <b>/</b> {selectedFile?.name || 'Overview'}</span><div className="top-actions"><span className="autosave"><i /> Saved</span><button className="top-menu" type="button" aria-label="More options">•••</button></div></header>
+      {selectedFile ? <article className="editor">
+        <div className="editor-meta"><span className="file-pill">□ FILE</span><span>{completedTodos}/{selectedFile.todos?.length || 0} checklist items done</span></div>
+        <input className="file-title" value={selectedFile.name} onChange={renameSelected} aria-label="File name" />
+        <textarea className="file-content" value={selectedFile.content} onChange={(event) => updateSelected({ content: event.target.value })} placeholder="Start writing here..." aria-label="File content" />
+        <section className="checklist"><div className="section-title"><h2>Checklist</h2><span>{selectedFile.todos?.length || 0} items</span></div><div className="todo-list">{selectedFile.todos?.map((todo) => <div className={`todo-row ${todo.done ? 'completed' : ''}`} key={todo.id}><button className="todo-check" type="button" onClick={() => toggleTodo(todo.id)} aria-label={`Mark ${todo.text} ${todo.done ? 'incomplete' : 'complete'}`}>{todo.done && '✓'}</button><span>{todo.text}</span><button className="todo-remove" type="button" onClick={() => removeTodo(todo.id)} aria-label={`Remove ${todo.text}`}>×</button></div>)}</div><form className="todo-add" onSubmit={addTodo}><span>＋</span><input name="todo" placeholder="Add a checklist item..." aria-label="New checklist item" /></form></section>
+        <div className="editor-hint"><span>⌘</span> Everything is saved automatically</div>
+      </article> : <div className="welcome"><span className="welcome-icon">✦</span><h1>A small space<br />for big ideas.</h1><p>Choose a file from the sidebar<br />or create something new.</p><div className="welcome-actions"><button type="button" onClick={() => setModal('folder')}>＋ New folder</button><button type="button" onClick={() => setModal('file')}>＋ New file</button></div></div>}
+    </main>
+    {modal && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}><form className="modal" onSubmit={createItem}><span className="modal-icon">{modal === 'folder' ? '▰' : '□'}</span><h2>New {modal}</h2><p>Give your {modal} a clear name.</p><input name="name" autoFocus placeholder={modal === 'folder' ? 'e.g. Personal' : 'e.g. Project notes'} /><div className="modal-actions"><button type="button" onClick={() => setModal(null)}>Cancel</button><button className="primary" type="submit">Create {modal}</button></div></form></div>}
+  </div>
 }
 
 export default App

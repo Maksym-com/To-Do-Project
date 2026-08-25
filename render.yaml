@@ -1,7 +1,3 @@
-databases:
-  - name: little-list-db
-    plan: free
-
 services:
   - type: web
     name: little-list-api
@@ -11,8 +7,6 @@ services:
     startCommand: gunicorn main:app
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: little-list-db
-          property: connectionString
+        sync: false
       - key: FRONTEND_URL
         sync: false
