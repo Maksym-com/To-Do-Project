@@ -1,6 +1,20 @@
 .file-title { font-size: clamp(46px, 8vw, 72px); font-weight: 700; letter-spacing: .01em; line-height: 1.02; }
+.file-content { width: min(100%, 650px); min-height: 90px; height: auto; resize: none; overflow: hidden; }
 .root-drop { margin: 9px 5px 2px; padding: 9px; border: 1px dashed var(--accent); border-radius: 6px; background: var(--accent-soft); color: var(--accent); cursor: pointer; font: 600 11px var(--sans); }
 .context-menu { position: fixed; z-index: 8; min-width: 125px; padding: 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); box-shadow: 0 8px 24px rgba(0,0,0,.16); }
 .context-menu button { width: 100%; padding: 8px 10px; border: 0; border-radius: 4px; background: transparent; color: #c85c3d; text-align: left; cursor: pointer; font: 600 11px var(--sans); }
 .context-menu button:hover { background: var(--accent-soft); }
-@media (max-width: 650px) { .file-title { font-size: 46px; letter-spacing: .01em; } }
+@media (max-width: 650px) { .file-title { font-size: 46px; letter-spacing: .01em; }.file-content { width: 100%; min-height: 120px; } }
+.mobile-menu { display: none; border: 0; padding: 7px; background: transparent; color: var(--ink); cursor: pointer; font-size: 20px; line-height: 1; }
+.drawer-backdrop { display: none; }
+@media (max-width: 650px) {
+	.sidebar { position: fixed; inset: 0 auto 0 0; z-index: 10; width: min(292px, 84vw); height: 100vh; min-height: 100vh; transform: translateX(-105%); transition: transform .28s ease; box-shadow: 12px 0 35px rgba(0, 0, 0, .14); }
+	.app-shell:has(.drawer-backdrop) .sidebar { transform: translateX(0); }
+	.app-shell:has(.drawer-backdrop) .drawer-backdrop { display: block; position: fixed; inset: 0; z-index: 9; border: 0; background: rgba(20, 22, 21, .42); }
+	.mobile-menu { display: block; }
+	.topbar { justify-content: flex-start; gap: 11px; }
+	.top-actions { margin-left: auto; }
+	.breadcrumb { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.editor { width: 100%; padding: 42px 22px 40px; }
+	.sidebar-footer { display: flex; margin-top: auto; }
+}
