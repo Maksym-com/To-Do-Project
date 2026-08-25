@@ -64,11 +64,27 @@ function App() {
     event.preventDefault()
     const name = new FormData(event.currentTarget).get('name').trim()
     if (!name) return
-    const id = `${modal}-${items.length + 1}`
-    const item = modal === 'folder' ? { id, type: 'folder', name, parentId: null } : { id, type: 'file', name, parentId: null, content: '', todos: [] }
+    if (modal.type === 'rename') {
+      setItems((current) => current.map((item) => item.id === modal.itemId ? { ...item, name } : item))
+      setModal(null)
+      return
+    }
+    const id = `${modal.type}-${items.length + 1}`
+    const item = modal.type === 'folder' ? { id, type: 'folder', name, parentId: modal.parentId } : { id, type: 'file', name, parentId: modal.parentId, content: '', todos: [] }
     setItems((current) => [...current, item])
-    if (modal === 'file') setSelectedId(id)
+    if (modal.type === 'file') setSelectedId(id)
+    if (modal.parentId) setExpanded((current) => new Set(current).add(modal.parentId))
     setModal(null)
+  }
+
+  function openCreateModal(type, parentId = null) {
+    setModal({ type, parentId })
+    setContextMenu(null)
+  }
+
+  function openRenameModal(itemId) {
+    setModal({ type: 'rename', itemId })
+    setContextMenu(null)
   }
 
   function updateSelected(changes) { setItems((current) => current.map((item) => item.id === selectedId ? { ...item, ...changes } : item)) }
@@ -120,7 +136,7 @@ function App() {
 
   function renderTree(parentId = null, depth = 0) {
     return childrenOf(parentId).map((item) => <div key={item.id}>
-      <button className={`tree-item ${selectedId === item.id ? 'selected' : ''}`} style={{ '--depth': depth }} draggable onDragStart={() => setDraggedId(item.id)} onDragEnd={() => setDraggedId(null)} onDragOver={(event) => item.type === 'folder' && event.preventDefault()} onDrop={(event) => { if (item.type === 'folder') { event.stopPropagation(); dropOnFolder(item.id) } }} onContextMenu={(event) => { event.preventDefault(); setContextMenu({ id: item.id, x: event.clientX, y: event.clientY }) }} onClick={() => { item.type === 'folder' ? toggleFolder(item.id) : setSelectedId(item.id); setMobileSidebarOpen(false) }} type="button">
+      <button className={`tree-item ${selectedId === item.id ? 'selected' : ''}`} style={{ '--depth': depth }} draggable onDragStart={() => setDraggedId(item.id)} onDragEnd={() => setDraggedId(null)} onDragOver={(event) => item.type === 'folder' && event.preventDefault()} onDrop={(event) => { if (item.type === 'folder') { event.stopPropagation(); dropOnFolder(item.id) } }} onContextMenu={(event) => { event.preventDefault(); setContextMenu({ id: item.id, x: event.clientX, y: event.clientY }) }} onClick={() => { if (item.type === 'folder') toggleFolder(item.id); else { setSelectedId(item.id); setMobileSidebarOpen(false) } }} type="button">
         <span className={`tree-icon ${item.type}`}>{item.type === 'folder' ? (expanded.has(item.id) ? '▾' : '▸') : '□'}</span><span className="tree-name">{item.name}</span>{item.type === 'folder' && <span className="tree-count">{childrenOf(item.id).length}</span>}
       </button>
       {item.type === 'folder' && expanded.has(item.id) && renderTree(item.id, depth + 1)}
@@ -135,7 +151,7 @@ function App() {
     <aside className="sidebar">
       <div className="brand"><span className="brand-mark">✦</span><span>the do note</span></div>
       <div className="workspace-head"><span>MY SPACE</span><button type="button" aria-label="More workspace options">•••</button></div>
-      <div className="create-actions"><button type="button" onClick={() => setModal('folder')}><span>＋</span> New folder</button><button type="button" onClick={() => setModal('file')}><span>＋</span> New file</button></div>
+      <div className="create-actions"><button type="button" onClick={() => openCreateModal('folder')}><span>＋</span> New folder</button><button type="button" onClick={() => openCreateModal('file')}><span>＋</span> New file</button></div>
       <div className="tree-label">FILES <span>{filesCount}</span></div>
       <nav className="file-tree" aria-label="Files and folders">{rootItems.length ? renderTree() : <p className="tree-empty">Your space is empty.</p>}{draggedId && items.find((item) => item.id === draggedId)?.parentId !== null && <button className="root-drop" type="button" onDragOver={(event) => event.preventDefault()} onDrop={moveToRoot}>↥ Move to My space</button>}</nav>
       <div className="sidebar-footer"><div><div className="storage-line"><span className="status-dot" /> {user.name}</div><button className="sign-out" type="button" onClick={() => { localStorage.removeItem('little-list-token'); setUser(null) }}>Sign out</button></div><button className="theme-toggle" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} aria-label="Change theme"><span>☀</span><span className={`toggle-track ${theme === 'dark' ? 'is-dark' : ''}`}><i /></span><span>☾</span></button></div>
@@ -148,11 +164,11 @@ function App() {
         <textarea ref={contentRef} className="file-content" value={selectedFile.content} onChange={(event) => updateSelected({ content: event.target.value })} placeholder="Start writing here..." aria-label="File content" />
         <section className="checklist"><div className="section-title"><h2>Checklist</h2><span>{selectedFile.todos?.length || 0} items</span></div><div className="todo-list">{selectedFile.todos?.map((todo) => <div className={`todo-row ${todo.done ? 'completed' : ''}`} key={todo.id}><button className="todo-check" type="button" onClick={() => toggleTodo(todo.id)} aria-label={`Mark ${todo.text} ${todo.done ? 'incomplete' : 'complete'}`}>{todo.done && '✓'}</button><span>{todo.text}</span><button className="todo-remove" type="button" onClick={() => removeTodo(todo.id)} aria-label={`Remove ${todo.text}`}>×</button></div>)}</div><form className="todo-add" onSubmit={addTodo}><span>＋</span><input name="todo" placeholder="Add a checklist item..." aria-label="New checklist item" /></form></section>
         <div className="editor-hint"><span>⌘</span> Everything is saved automatically</div>
-      </article> : <div className="welcome"><span className="welcome-icon">✦</span><h1>A small space<br />for big ideas.</h1><p>Choose a file from the sidebar<br />or create something new.</p><div className="welcome-actions"><button type="button" onClick={() => setModal('folder')}>＋ New folder</button><button type="button" onClick={() => setModal('file')}>＋ New file</button></div></div>}
+      </article> : <div className="welcome"><span className="welcome-icon">✦</span><h1>A small space<br />for big ideas.</h1><p>Choose a file from the sidebar<br />or create something new.</p><div className="welcome-actions"><button type="button" onClick={() => openCreateModal('folder')}>＋ New folder</button><button type="button" onClick={() => openCreateModal('file')}>＋ New file</button></div></div>}
     </main>
-    {modal && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}><form className="modal" onSubmit={createItem}><span className="modal-icon">{modal === 'folder' ? '▰' : '□'}</span><h2>New {modal}</h2><p>Give your {modal} a clear name.</p><input name="name" autoFocus placeholder={modal === 'folder' ? 'e.g. Personal' : 'e.g. Project notes'} /><div className="modal-actions"><button type="button" onClick={() => setModal(null)}>Cancel</button><button className="primary" type="submit">Create {modal}</button></div></form></div>}
+    {modal && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}><form className="modal" onSubmit={createItem}><span className="modal-icon">{modal.type === 'folder' ? '▰' : '□'}</span><h2>{modal.type === 'rename' ? 'Rename' : `New ${modal.type}`}</h2><p>{modal.type === 'rename' ? 'Choose a clear new name.' : `Give your ${modal.type} a clear name.`}</p><input name="name" autoFocus placeholder={modal.type === 'folder' ? 'e.g. Personal' : 'e.g. Project notes'} defaultValue={modal.type === 'rename' ? items.find((item) => item.id === modal.itemId)?.name : ''} /><div className="modal-actions"><button type="button" onClick={() => setModal(null)}>Cancel</button><button className="primary" type="submit">{modal.type === 'rename' ? 'Save name' : `Create ${modal.type}`}</button></div></form></div>}
     {mobileSidebarOpen && <button className="drawer-backdrop" type="button" aria-label="Close files and folders" onClick={() => setMobileSidebarOpen(false)} />}
-    {contextMenu && <div className="context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}><button type="button" onClick={() => deleteItem(contextMenu.id)}>Delete {items.find((item) => item.id === contextMenu.id)?.type}</button></div>}
+    {contextMenu && <div className="context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}>{items.find((item) => item.id === contextMenu.id)?.type === 'folder' && <><button type="button" onClick={() => openRenameModal(contextMenu.id)}>Rename folder</button><button type="button" onClick={() => openCreateModal('file', contextMenu.id)}>Add file</button><button type="button" onClick={() => openCreateModal('folder', contextMenu.id)}>Add folder</button></>}<button className="danger" type="button" onClick={() => deleteItem(contextMenu.id)}>Delete {items.find((item) => item.id === contextMenu.id)?.type}</button></div>}
   </div>
 }
 
