@@ -9,6 +9,8 @@
 .drawer-backdrop { display: none; }
 .sign-out { margin-top: 4px; padding: 0; border: 0; background: transparent; color: var(--soft); cursor: pointer; font-size: 10px; }
 .sign-out:hover { color: var(--accent); }
+.sign-out { margin-top: 4px; padding: 0; border: 0; background: transparent; color: var(--soft); cursor: pointer; font-size: 10px; }
+.sign-out:hover { color: var(--accent); }
 .auth-shell { --auth-bg: #f7f6f1; --auth-paper: #fffefa; --auth-ink: #292b26; --auth-muted: #96978e; --auth-line: #e1e0d8; --auth-accent: #df754d; min-height: 100vh; display: grid; place-items: center; background: var(--auth-bg); color: var(--auth-muted); }
 .auth-shell.dark { --auth-bg: #1d2020; --auth-paper: #282d2c; --auth-ink: #f1efe7; --auth-muted: #a9b0aa; --auth-line: #3b4140; --auth-accent: #f19a70; }
 .auth-card { width: min(390px, calc(100% - 40px)); padding: 43px; border: 1px solid var(--auth-line); border-radius: 10px; background: var(--auth-paper); box-shadow: 0 24px 80px rgba(50, 48, 38, .08); }
