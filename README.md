@@ -1,4 +1,4 @@
-# Little List
+# The Do Note
 
 Simple Notion-style to-do app: Flask + PostgreSQL API on Render, React/Vite client on Vercel.
 
@@ -10,6 +10,7 @@ Simple Notion-style to-do app: Flask + PostgreSQL API on Render, React/Vite clie
 4. In the Render web service **Environment Variables**, add:
    - `DATABASE_URL`: the Supabase **Transaction pooler** connection string from **Connect > ORMs > SQLAlchemy**. Keep the full value, including the password and `?sslmode=require`.
    - `FRONTEND_URL`: the final Vercel URL, for example `https://little-list.vercel.app`.
+   - `SECRET_KEY`: generate a long random value, or let `render.yaml` generate it automatically.
 5. Check the API at `https://YOUR-RENDER-SERVICE.onrender.com/`.
 
 ## Deploy client to Vercel

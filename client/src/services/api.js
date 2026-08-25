@@ -29,3 +29,23 @@ export async function checkHealth() {
   const res = await fetch(`${API_URL}/`);
   return res.json();
 }
+
+async function authRequest(path, payload) {
+  const result = await request(path, { method: "POST", body: JSON.stringify(payload) });
+  localStorage.setItem("little-list-token", result.token);
+  return result.user;
+}
+
+export function registerUser(payload) {
+  return authRequest("/auth/register", payload);
+}
+
+export function loginUser(payload) {
+  return authRequest("/auth/login", payload);
+}
+
+export function getCurrentUser() {
+  const token = localStorage.getItem("little-list-token");
+  if (!token) return Promise.reject(new Error("Not authenticated"));
+  return request("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+}

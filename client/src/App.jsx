@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { getCurrentUser, loginUser, registerUser } from './services/api'
 import './App.css'
 import './overrides.css'
 
@@ -9,7 +10,11 @@ const starterItems = [
 ]
 
 function App() {
-  const [items, setItems] = useState(() => JSON.parse(localStorage.getItem('little-list-items') || 'null') || starterItems)
+  const [user, setUser] = useState(null)
+  const [authMode, setAuthMode] = useState('login')
+  const [authError, setAuthError] = useState('')
+  const [authBusy, setAuthBusy] = useState(false)
+  const [items, setItems] = useState(starterItems)
   const [selectedId, setSelectedId] = useState('file-welcome')
   const [expanded, setExpanded] = useState(() => new Set(['folder-project']))
   const [modal, setModal] = useState(null)
@@ -23,7 +28,14 @@ function App() {
   const rootItems = items.filter((item) => item.parentId === null)
   const filesCount = items.filter((item) => item.type === 'file').length
 
-  useEffect(() => localStorage.setItem('little-list-items', JSON.stringify(items)), [items])
+  useEffect(() => {
+    getCurrentUser().then((authenticatedUser) => {
+      setUser(authenticatedUser)
+      const saved = localStorage.getItem(`little-list-items-${authenticatedUser.id}`)
+      setItems(saved ? JSON.parse(saved) : starterItems)
+    }).catch(() => localStorage.removeItem('little-list-token'))
+  }, [])
+  useEffect(() => { if (user) localStorage.setItem(`little-list-items-${user.id}`, JSON.stringify(items)) }, [items, user])
   useEffect(() => { localStorage.setItem('little-list-theme', theme) }, [theme])
   useEffect(() => {
     if (!contentRef.current) return
@@ -32,6 +44,21 @@ function App() {
   }, [selectedId, selectedFile?.content])
 
   function childrenOf(parentId) { return items.filter((item) => item.parentId === parentId) }
+
+  async function submitAuth(event) {
+    event.preventDefault()
+    setAuthError('')
+    setAuthBusy(true)
+    const data = Object.fromEntries(new FormData(event.currentTarget))
+    try {
+      const authenticatedUser = authMode === 'login' ? await loginUser(data) : await registerUser(data)
+      setUser(authenticatedUser)
+      const saved = localStorage.getItem(`little-list-items-${authenticatedUser.id}`)
+      setItems(saved ? JSON.parse(saved) : starterItems)
+    } catch (error) {
+      setAuthError(error.message.includes('409') ? 'This email is already registered.' : authMode === 'login' ? 'Invalid email or password.' : 'Use a name, valid email and password of at least 6 characters.')
+    } finally { setAuthBusy(false) }
+  }
 
   function createItem(event) {
     event.preventDefault()
@@ -102,9 +129,11 @@ function App() {
 
   const completedTodos = selectedFile?.todos?.filter((todo) => todo.done).length || 0
 
+  if (!user) return <div className={`auth-shell ${theme}`}><div className="auth-card"><div className="brand auth-brand"><span className="brand-mark">✦</span><span>the do note</span></div><span className="auth-kicker">YOUR QUIET WORKSPACE</span><h1>{authMode === 'login' ? 'Welcome back.' : 'Make it yours.'}</h1><p>{authMode === 'login' ? 'Sign in to return to your files.' : 'Create an account for your personal space.'}</p><form className="auth-form" onSubmit={submitAuth}>{authMode === 'register' && <input name="name" placeholder="Your name" autoComplete="name" required />}<input name="email" type="email" placeholder="Email address" autoComplete="email" required /><input name="password" type="password" placeholder="Password (6+ characters)" minLength="6" autoComplete={authMode === 'login' ? 'current-password' : 'new-password'} required />{authError && <div className="auth-error">{authError}</div>}<button className="auth-submit" type="submit" disabled={authBusy}>{authBusy ? 'Please wait...' : authMode === 'login' ? 'Sign in' : 'Create account'}</button></form><button className="auth-switch" type="button" onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError('') }}>{authMode === 'login' ? 'New here? Create an account' : 'Already have an account? Sign in'}</button></div></div>
+
   return <div className={`app-shell ${theme}`}>
     <aside className="sidebar">
-      <div className="brand"><span className="brand-mark">✦</span><span>little list</span></div>
+      <div className="brand"><span className="brand-mark">✦</span><span>the do note</span></div>
       <div className="workspace-head"><span>MY SPACE</span><button type="button" aria-label="More workspace options">•••</button></div>
       <div className="create-actions"><button type="button" onClick={() => setModal('folder')}><span>＋</span> New folder</button><button type="button" onClick={() => setModal('file')}><span>＋</span> New file</button></div>
       <div className="tree-label">FILES <span>{filesCount}</span></div>
