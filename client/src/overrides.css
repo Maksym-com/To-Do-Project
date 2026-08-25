@@ -10,7 +10,9 @@
 .drawer-backdrop { display: none; }
 .sign-out { margin-top: 4px; padding: 0; border: 0; background: transparent; color: var(--soft); cursor: pointer; font-size: 10px; }
 .sign-out:hover { color: var(--accent); }
-.tree-item { padding: 0; cursor: default; }
+.tree-item { padding: 0; margin-left: calc(var(--depth, 0) * 18px); width: calc(100% - (var(--depth, 0) * 18px)); cursor: default; }
+.tree-node { position: relative; }
+.tree-children { margin-left: 9px; padding-left: 9px; border-left: 1px solid var(--line); }
 .tree-open { min-width: 0; flex: 1; display: flex; align-items: center; gap: 8px; padding: 9px 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; font: inherit; }
 .drag-handle { width: 20px; flex: 0 0 20px; color: var(--soft); cursor: grab; text-align: center; font-size: 16px; opacity: .65; }
 .drag-handle:active { cursor: grabbing; }
@@ -35,8 +37,8 @@
 	.sidebar-footer { display: flex; margin-top: auto; }
 	.auth-card { padding: 31px 25px; }
 	.file-tree { display: grid; align-content: start; overflow-x: hidden; overflow-y: auto; flex: 1; min-height: 0; padding: 0 2px 14px; overscroll-behavior: contain; }
-	.tree-item { width: 100%; min-width: 0; min-height: 46px; padding: 0 10px; padding-left: calc(10px + var(--depth) * 18px); touch-action: none; }
-	.tree-item[style] { padding-left: calc(10px + var(--depth) * 18px); }
+	.tree-item { width: 100%; min-width: 0; min-height: 46px; margin-left: 0; padding: 0 10px; touch-action: none; }
+	.tree-children { margin-left: 10px; padding-left: 7px; }
 	.tree-open { padding: 11px 0; }
 	.tree-actions { opacity: 1; }
 	.context-menu { max-width: calc(100vw - 20px); }
