@@ -75,11 +75,13 @@ function App() {
     if (modal.type === 'file') setSelectedId(id)
     if (modal.parentId) setExpanded((current) => new Set(current).add(modal.parentId))
     setModal(null)
+    setMobileSidebarOpen(true)
   }
 
   function openCreateModal(type, parentId = null) {
     setModal({ type, parentId })
     setContextMenu(null)
+    setMobileSidebarOpen(false)
   }
 
   function openRenameModal(itemId) {
