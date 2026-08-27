@@ -1,8 +1,8 @@
 .file-title { font-size: clamp(46px, 8vw, 72px); font-weight: 700; letter-spacing: .01em; line-height: 1.02; }
 .file-content { width: min(100%, 650px); min-height: 90px; height: auto; resize: none; overflow: hidden; }
 .root-drop { margin: 9px 5px 2px; padding: 9px; border: 1px dashed var(--accent); border-radius: 6px; background: var(--accent-soft); color: var(--accent); cursor: pointer; font: 600 11px var(--sans); }
-.context-menu { position: fixed; z-index: 20; min-width: 170px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: 0 14px 32px rgba(0,0,0,.2); }
-.context-menu button { width: 100%; padding: 8px 10px; border: 0; border-radius: 4px; background: transparent; color: #c85c3d; text-align: left; cursor: pointer; font: 600 11px var(--sans); }
+.context-menu { position: fixed; z-index: 20; width: 240px; box-sizing: border-box; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: 0 14px 32px rgba(0,0,0,.2); }
+.context-menu button { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; border: 0; border-radius: 4px; background: transparent; color: #c85c3d; text-align: left; cursor: pointer; font: 600 12px var(--sans); }
 .context-menu button:hover { background: var(--accent-soft); }
 .context-menu button.danger { border-top: 1px solid var(--line); margin-top: 3px; color: #c85c3d; }
 @media (max-width: 650px) { .file-title { font-size: 46px; letter-spacing: .01em; }.file-content { width: 100%; min-height: 120px; } }
@@ -41,5 +41,5 @@
 	.tree-children { margin-left: 10px; padding-left: 7px; }
 	.tree-open { padding: 11px 0; }
 	.tree-actions { opacity: 1; }
-	.context-menu { max-width: calc(100vw - 20px); }
+	.context-menu { width: min(240px, calc(100vw - 24px)); max-width: calc(100vw - 24px); }
 }

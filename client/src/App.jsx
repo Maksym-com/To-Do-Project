@@ -91,8 +91,12 @@ function App() {
 
   function showContextMenu(event, itemId) {
     const isMobile = window.matchMedia('(max-width: 650px)').matches
-    const menuHeight = 190
-    setContextMenu({ id: itemId, x: isMobile ? 12 : event.clientX, y: isMobile ? Math.max(12, event.clientY - menuHeight) : event.clientY })
+    const item = items.find((entry) => entry.id === itemId)
+    const menuWidth = 240
+    const menuHeight = item?.type === 'folder' ? 208 : 112
+    const x = isMobile ? Math.max(12, Math.min(event.clientX - menuWidth + 34, window.innerWidth - menuWidth - 12)) : event.clientX
+    const y = isMobile ? Math.max(12, event.clientY - menuHeight - 8) : event.clientY
+    setContextMenu({ id: itemId, x, y })
   }
 
   function updateSelected(changes) { setItems((current) => current.map((item) => item.id === selectedId ? { ...item, ...changes } : item)) }
@@ -176,7 +180,7 @@ function App() {
     </main>
     {modal && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}><form className="modal" onSubmit={createItem}><span className="modal-icon">{modal.type === 'folder' ? '▰' : '□'}</span><h2>{modal.type === 'rename' ? 'Rename' : `New ${modal.type}`}</h2><p>{modal.type === 'rename' ? 'Choose a clear new name.' : `Give your ${modal.type} a clear name.`}</p><input name="name" autoFocus placeholder={modal.type === 'folder' ? 'e.g. Personal' : 'e.g. Project notes'} defaultValue={modal.type === 'rename' ? items.find((item) => item.id === modal.itemId)?.name : ''} /><div className="modal-actions"><button type="button" onClick={() => setModal(null)}>Cancel</button><button className="primary" type="submit">{modal.type === 'rename' ? 'Save name' : `Create ${modal.type}`}</button></div></form></div>}
     {mobileSidebarOpen && <button className="drawer-backdrop" type="button" aria-label="Close files and folders" onClick={() => setMobileSidebarOpen(false)} />}
-    {contextMenu && <div className="context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}>{items.find((item) => item.id === contextMenu.id)?.type === 'folder' ? <><button type="button" onClick={() => openRenameModal(contextMenu.id)}>Rename folder</button><button type="button" onClick={() => openCreateModal('file', contextMenu.id)}>Add file</button><button type="button" onClick={() => openCreateModal('folder', contextMenu.id)}>Add folder</button></> : <button type="button" onClick={() => openRenameModal(contextMenu.id)}>Rename file</button>}<button className="danger" type="button" onClick={() => deleteItem(contextMenu.id)}>Delete {items.find((item) => item.id === contextMenu.id)?.type}</button></div>}
+    {contextMenu && <div className={`context-menu context-${items.find((item) => item.id === contextMenu.id)?.type}`} style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}>{items.find((item) => item.id === contextMenu.id)?.type === 'folder' ? <><button type="button" onClick={() => openRenameModal(contextMenu.id)}>Rename folder</button><button type="button" onClick={() => openCreateModal('file', contextMenu.id)}>Add file</button><button type="button" onClick={() => openCreateModal('folder', contextMenu.id)}>Add folder</button></> : <button type="button" onClick={() => openRenameModal(contextMenu.id)}>Rename file</button>}<button className="danger" type="button" onClick={() => deleteItem(contextMenu.id)}>Delete {items.find((item) => item.id === contextMenu.id)?.type}</button></div>}
   </div>
 }
 
