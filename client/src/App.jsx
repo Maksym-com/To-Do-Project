@@ -89,6 +89,12 @@ function App() {
     setContextMenu(null)
   }
 
+  function showContextMenu(event, itemId) {
+    const isMobile = window.matchMedia('(max-width: 650px)').matches
+    const menuHeight = 190
+    setContextMenu({ id: itemId, x: isMobile ? 12 : event.clientX, y: isMobile ? Math.max(12, event.clientY - menuHeight) : event.clientY })
+  }
+
   function updateSelected(changes) { setItems((current) => current.map((item) => item.id === selectedId ? { ...item, ...changes } : item)) }
   function renameSelected(event) { updateSelected({ name: event.target.value }) }
 
@@ -138,8 +144,8 @@ function App() {
 
   function renderTree(parentId = null, depth = 0) {
     return childrenOf(parentId).map((item) => <div className="tree-node" style={{ '--depth': depth }} key={item.id}>
-      <div className={`tree-item ${selectedId === item.id ? 'selected' : ''}`} draggable onDragStart={() => setDraggedId(item.id)} onDragEnd={() => setDraggedId(null)} onDragOver={(event) => item.type === 'folder' && event.preventDefault()} onDrop={(event) => { if (item.type === 'folder') { event.stopPropagation(); dropOnFolder(item.id) } }} onContextMenu={(event) => { event.preventDefault(); setContextMenu({ id: item.id, x: event.clientX, y: event.clientY }) }}>
-        <span className="drag-handle" title="Drag to move">⠿</span><button className="tree-open" type="button" onClick={() => { if (item.type === 'folder') toggleFolder(item.id); else { setSelectedId(item.id); setMobileSidebarOpen(false) } }}><span className={`tree-icon ${item.type}`}>{item.type === 'folder' ? (expanded.has(item.id) ? '▾' : '▸') : '□'}</span><span className="tree-name">{item.name}</span></button>{item.type === 'folder' && <span className="tree-count">{childrenOf(item.id).length}</span>}<button className="tree-actions" type="button" aria-label={`Actions for ${item.name}`} onClick={(event) => { event.stopPropagation(); setContextMenu({ id: item.id, x: event.clientX, y: event.clientY }) }}>•••</button>
+      <div className={`tree-item ${selectedId === item.id ? 'selected' : ''}`} draggable onDragStart={() => setDraggedId(item.id)} onDragEnd={() => setDraggedId(null)} onDragOver={(event) => item.type === 'folder' && event.preventDefault()} onDrop={(event) => { if (item.type === 'folder') { event.stopPropagation(); dropOnFolder(item.id) } }} onContextMenu={(event) => { event.preventDefault(); showContextMenu(event, item.id) }}>
+        <span className="drag-handle" title="Drag to move">⠿</span><button className="tree-open" type="button" onClick={() => { if (item.type === 'folder') toggleFolder(item.id); else { setSelectedId(item.id); setMobileSidebarOpen(false) } }}><span className={`tree-icon ${item.type}`}>{item.type === 'folder' ? (expanded.has(item.id) ? '▾' : '▸') : '□'}</span><span className="tree-name">{item.name}</span></button>{item.type === 'folder' && <span className="tree-count">{childrenOf(item.id).length}</span>}<button className="tree-actions" type="button" aria-label={`Actions for ${item.name}`} onClick={(event) => { event.stopPropagation(); showContextMenu(event, item.id) }}>•••</button>
       </div>
       {item.type === 'folder' && expanded.has(item.id) && <div className="tree-children">{renderTree(item.id, depth + 1)}</div>}
     </div>)
